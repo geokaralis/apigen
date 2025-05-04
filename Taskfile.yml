@@ -1,0 +1,13 @@
+version: '3'
+
+tasks:
+  install:
+    cmd: go mod tidy
+
+  fmt:
+    cmds:
+      - go fmt ./...
+
+  build:
+    cmds:
+      - CGO_ENABLED=0 go build -ldflags="-s -w" -o apigen ./cmd/app/main.go
