@@ -1,3 +1,341 @@
 {
-    "openapi": "3.0.3"
+  "openapi": "3.0.3",
+  "paths": {
+    "/resources": {
+      "get": {
+        "summary": "List computing resources",
+        "description": "Returns a list of computing resources with optional filtering",
+        "operationId": "resource_list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "vpc",
+            "description": "Filter resources by VPC name or ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "description": "Filter resources by type",
+            "schema": {
+              "type": "string",
+              "enum": ["cpu", "memory", "storage", "network", "gpu"]
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "description": "Filter resources by status",
+            "schema": {
+              "type": "string",
+              "enum": ["available", "in_use", "maintenance", "error"]
+            }
+          },
+          {
+            "in": "query",
+            "name": "region",
+            "description": "Filter resources by region",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "description": "Maximum number of items to return",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "description": "Number of items to skip",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                 "$ref": "#/components/schemas/ResourceResultsPage"
+                }
+              }
+            }
+          },
+          "4xx": {
+            "$ref": "#/components/schemas/Error"
+          },
+          "5xx": {
+            "$ref": "#/components/schemas/Error"
+          }
+        }
+      }
+    },
+    "/resources/{resource}": {
+      "get": {
+        "summary": "Fetch a single resource",
+        "description": "Returns detailed information about a specific computing resource",
+        "operationId": "resource_view",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "resource",
+            "description": "Name or ID of the resource",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Resource"
+                }
+              }
+            }
+          },
+          "4xx": {
+            "$ref": "#/components/schemas/Error"
+          },
+          "5xx": {
+            "$ref": "#/components/schemas/Error"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ResourceResultsPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "description": "List of Resources",
+            "items": {
+              "$ref": "#/components/schemas/Resource"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "description": "Total number of items available"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Number of items per page"
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Current offset (starting index)"
+          }
+        }
+      },
+      "Resource": {
+        "type": "object",
+        "required": ["id", "name", "type", "status"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier of the resource"
+          },
+          "name": {
+            "type": "string",
+            "description": "User-friendly name of the resource"
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of computing resource",
+            "enum": ["cpu", "memory", "storage", "network", "gpu"]
+          },
+          "status": {
+            "type": "string",
+            "description": "Current status of the resource",
+            "enum": ["available", "in_use", "maintenance", "error"]
+          },
+          "vpc_id": {
+            "type": "string",
+            "description": "ID of the VPC this resource belongs to"
+          },
+          "region": {
+            "type": "string",
+            "description": "Region where the resource is located"
+          },
+          "zone": {
+            "type": "string",
+            "description": "Availability zone where the resource is located"
+          },
+          "specifications": {
+            "type": "object",
+            "description": "Resource-specific specifications based on type",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Cpu"
+              },
+              {
+                "$ref": "#/components/schemas/Memory"
+              },
+              {
+                "$ref": "#/components/schemas/Storage"
+              },
+              {
+                "$ref": "#/components/schemas/Network"
+              },
+              {
+                "$ref": "#/components/schemas/Gpu"
+              }
+            ]
+          },
+          "utilization_percentage": {
+            "type": "number",
+            "format": "float",
+            "description": "Current utilization as a percentage",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "tags": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "User-defined tags for the resource"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation timestamp"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update timestamp"
+          }
+        }
+      },
+      "Cpu": {
+        "type": "object",
+        "required": ["cores", "architecture"],
+        "properties": {
+          "cores": {
+            "type": "integer",
+            "description": "Number of CPU cores"
+          },
+          "architecture": {
+            "type": "string",
+            "description": "CPU architecture",
+            "example": "x86_64"
+          },
+          "clock_speed": {
+            "type": "number",
+            "description": "Base clock speed in GHz"
+          },
+          "threads_per_core": {
+            "type": "integer",
+            "description": "Number of threads per core"
+          }
+        }
+      },
+      "Memory": {
+        "type": "object",
+        "required": ["total_size", "type"],
+        "properties": {
+          "total_size": {
+            "type": "integer",
+            "description": "Total memory size in MB"
+          },
+          "type": {
+            "type": "string",
+            "description": "Memory type",
+            "example": "DDR4"
+          },
+          "speed": {
+            "type": "integer",
+            "description": "Memory speed in MHz"
+          }
+        }
+      },
+      "Storage": {
+        "type": "object",
+        "required": ["total_size", "type"],
+        "properties": {
+          "total_size": {
+            "type": "integer",
+            "description": "Total storage size in GB"
+          },
+          "type": {
+            "type": "string",
+            "description": "Storage type",
+            "enum": ["ssd", "hdd", "nvme"]
+          },
+          "iops": {
+            "type": "integer",
+            "description": "IOPS (Input/Output Operations Per Second)"
+          }
+        }
+      },
+      "Network": {
+        "type": "object",
+        "required": ["bandwidth"],
+        "properties": {
+          "bandwidth": {
+            "type": "integer",
+            "description": "Network bandwidth in Mbps"
+          },
+          "public_ip": {
+            "type": "boolean",
+            "description": "Whether a public IP is assigned"
+          },
+          "mtu": {
+            "type": "integer",
+            "description": "Maximum Transmission Unit (MTU)"
+          }
+        }
+      },
+      "Gpu": {
+        "type": "object",
+        "required": ["model", "memory"],
+        "properties": {
+          "model": {
+            "type": "string",
+            "description": "GPU model name"
+          },
+          "memory": {
+            "type": "integer",
+            "description": "GPU memory in MB"
+          },
+          "cuda_cores": {
+            "type": "integer",
+            "description": "Number of CUDA cores, if applicable"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Error code"
+          },
+          "message": {
+            "type": "string",
+            "description": "Error message"
+          }
+        }
+      }
+    }
+  }
 }
