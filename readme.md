@@ -6,7 +6,7 @@ An opinionated cli utility written in Go for generating type-safe api clients fr
 ``` bash
 git clone https://github.com/geokaralis/apigen.git
 cd apigen
-go build -o apigen cmd/apigen/main.go
+go build -o apigen cmd/app/main.go
 ```
 
 ## Usage
